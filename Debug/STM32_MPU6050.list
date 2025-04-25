@@ -27,25 +27,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  0000f348  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000fe11  00000000  00000000  0000f371  2**0
+ 12 .debug_info   0001048e  00000000  00000000  0000f371  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 0000302c  00000000  00000000  0001f182  2**0
+ 13 .debug_abbrev 000031c6  00000000  00000000  0001f7ff  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000e28  00000000  00000000  000221b0  2**3
+ 14 .debug_aranges 00000e40  00000000  00000000  000229c8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00000a9c  00000000  00000000  00022fd8  2**0
+ 15 .debug_rnglists 00000aa9  00000000  00000000  00023808  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  0001a7c3  00000000  00000000  00023a74  2**0
+ 16 .debug_macro  0001aa43  00000000  00000000  000242b1  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   00013301  00000000  00000000  0003e237  2**0
+ 17 .debug_line   00013b32  00000000  00000000  0003ecf4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00089a6d  00000000  00000000  00051538  2**0
+ 18 .debug_str    00089a8e  00000000  00000000  00052826  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000dafa5  2**0
+ 19 .comment      00000043  00000000  00000000  000dc2b4  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00004d7c  00000000  00000000  000dafe8  2**2
+ 20 .debug_frame  00004d8c  00000000  00000000  000dc2f8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000005b  00000000  00000000  000dfd64  2**0
+ 21 .debug_line_str 0000005b  00000000  00000000  000e1084  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1460,17 +1460,15 @@ Disassembly of section .text:
  80010fa:	4770      	bx	lr
 
 080010fc <MPU6050_Init>:
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
+#define beta sqrtf(3.0f / 4.0f) * gyroMeasError
 
-// Initialisation setting to be written to IMU registers
-void MPU6050_Init() {
+// Quaternion state
+static float SEq_1 = 1.0f, SEq_2 = 0.0f, SEq_3 = 0.0f, SEq_4 = 0.0f;
+
+void MPU6050_Init(void) {
  80010fc:	b580      	push	{r7, lr}
  80010fe:	b086      	sub	sp, #24
  8001100:	af04      	add	r7, sp, #16
-
-	// Power management register, wakes IMU from sleep mode
     uint8_t value = 0x00;
  8001102:	2300      	movs	r3, #0
  8001104:	71fb      	strb	r3, [r7, #7]
@@ -1486,8 +1484,6 @@ void MPU6050_Init() {
  8001118:	21d0      	movs	r1, #208	@ 0xd0
  800111a:	481a      	ldr	r0, [pc, #104]	@ (8001184 <MPU6050_Init+0x88>)
  800111c:	f001 fc40 	bl	80029a0 <HAL_I2C_Mem_Write>
-
-    // Sample rate register, sets rate for IMU to sample at
     value = 0x07;
  8001120:	2307      	movs	r3, #7
  8001122:	71fb      	strb	r3, [r7, #7]
@@ -1503,9 +1499,7 @@ void MPU6050_Init() {
  8001136:	21d0      	movs	r1, #208	@ 0xd0
  8001138:	4812      	ldr	r0, [pc, #72]	@ (8001184 <MPU6050_Init+0x88>)
  800113a:	f001 fc31 	bl	80029a0 <HAL_I2C_Mem_Write>
-
-    // Sets degrees per second range for gyro
-    value = 0x10; // 1000 dps
+    value = 0x10; // Gyro ±1000 dps
  800113e:	2310      	movs	r3, #16
  8001140:	71fb      	strb	r3, [r7, #7]
     HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_ADDR, 1, &value, 1, 1000);
@@ -1520,9 +1514,7 @@ void MPU6050_Init() {
  8001154:	21d0      	movs	r1, #208	@ 0xd0
  8001156:	480b      	ldr	r0, [pc, #44]	@ (8001184 <MPU6050_Init+0x88>)
  8001158:	f001 fc22 	bl	80029a0 <HAL_I2C_Mem_Write>
-
-    // Sets g range for gyro
-    value = 0x18; // 16g
+    value = 0x18; // Accel ±16g
  800115c:	2318      	movs	r3, #24
  800115e:	71fb      	strb	r3, [r7, #7]
     HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG_ADDR, 1, &value, 1, 1000);
@@ -1547,7 +1539,6 @@ void MPU6050_Init() {
 
 08001188 <MPU6050_Read_Accel>:
 
-// Read acceleration data from MPU6050
 void MPU6050_Read_Accel(float *ax, float *ay, float *az) {
  8001188:	b580      	push	{r7, lr}
  800118a:	b08c      	sub	sp, #48	@ 0x30
@@ -1570,8 +1561,6 @@ void MPU6050_Read_Accel(float *ax, float *ay, float *az) {
  80011a8:	21d0      	movs	r1, #208	@ 0xd0
  80011aa:	4824      	ldr	r0, [pc, #144]	@ (800123c <MPU6050_Read_Accel+0xb4>)
  80011ac:	f001 fcf2 	bl	8002b94 <HAL_I2C_Mem_Read>
-
-    // Combine H and L bytes
     Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data[1]);
  80011b0:	7d3b      	ldrb	r3, [r7, #20]
  80011b2:	b21b      	sxth	r3, r3
@@ -1600,7 +1589,6 @@ void MPU6050_Read_Accel(float *ax, float *ay, float *az) {
  80011dc:	4313      	orrs	r3, r2
  80011de:	837b      	strh	r3, [r7, #26]
 
-    // Calculate compensation for resolution
     *ax = (float)Accel_X_RAW / 208.837880418f;
  80011e0:	f9b7 301e 	ldrsh.w	r3, [r7, #30]
  80011e4:	4618      	mov	r0, r3
@@ -1648,7 +1636,6 @@ void MPU6050_Read_Accel(float *ax, float *ay, float *az) {
 
 08001248 <MPU6050_Read_Gyro>:
 
-// Read gyroscope data from MPU6050
 void MPU6050_Read_Gyro(float *gx, float *gy, float *gz) {
  8001248:	b580      	push	{r7, lr}
  800124a:	b08c      	sub	sp, #48	@ 0x30
@@ -1671,8 +1658,6 @@ void MPU6050_Read_Gyro(float *gx, float *gy, float *gz) {
  8001268:	21d0      	movs	r1, #208	@ 0xd0
  800126a:	483b      	ldr	r0, [pc, #236]	@ (8001358 <MPU6050_Read_Gyro+0x110>)
  800126c:	f001 fc92 	bl	8002b94 <HAL_I2C_Mem_Read>
-
-    // Combine H and L bytes
     Gyro_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data[1]);
  8001270:	7d3b      	ldrb	r3, [r7, #20]
  8001272:	b21b      	sxth	r3, r3
@@ -1701,7 +1686,6 @@ void MPU6050_Read_Gyro(float *gx, float *gy, float *gz) {
  800129c:	4313      	orrs	r3, r2
  800129e:	837b      	strh	r3, [r7, #26]
 
-    // Convert to rad/s and calculate compensation for resolution
     *gx = (float)Gyro_X_RAW / 32.8f * (M_PI / 180.0f);
  80012a0:	f9b7 301e 	ldrsh.w	r3, [r7, #30]
  80012a4:	4618      	mov	r0, r3
@@ -1780,7 +1764,6 @@ void MPU6050_Read_Gyro(float *gx, float *gy, float *gz) {
 
 08001360 <Madgwick_Filter>:
 
-// Sensor-fusion algorithm to calculate orientation
 void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az) {
  8001360:	b590      	push	{r4, r7, lr}
  8001362:	b09f      	sub	sp, #124	@ 0x7c
@@ -1846,7 +1829,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  80013e2:	4603      	mov	r3, r0
  80013e4:	65fb      	str	r3, [r7, #92]	@ 0x5c
 
-    // Normalise accelerometer measurement
     float norm = sqrtf(ax * ax + ay * ay + az * az);
  80013e6:	6839      	ldr	r1, [r7, #0]
  80013e8:	6838      	ldr	r0, [r7, #0]
@@ -1892,7 +1874,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  8001452:	4603      	mov	r3, r0
  8001454:	f8c7 308c 	str.w	r3, [r7, #140]	@ 0x8c
 
-    // Compute objective function and Jacobian
     float f_1 = twoSEq_2 * SEq_4 - twoSEq_1 * SEq_3 - ax;
  8001458:	4b66      	ldr	r3, [pc, #408]	@ (80015f4 <Madgwick_Filter+0x294>)
  800145a:	681b      	ldr	r3, [r3, #0]
@@ -1998,7 +1979,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  8001538:	4603      	mov	r3, r0
  800153a:	637b      	str	r3, [r7, #52]	@ 0x34
 
-    // Compute gradient
     float SEqHatDot_1 = J_14or21 * f_2 - J_11or24 * f_1;
  800153c:	6d39      	ldr	r1, [r7, #80]	@ 0x50
  800153e:	6bf8      	ldr	r0, [r7, #60]	@ 0x3c
@@ -2083,7 +2063,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  80015fe:	4603      	mov	r3, r0
  8001600:	627b      	str	r3, [r7, #36]	@ 0x24
 
-    // Normalise gradient
     norm = sqrtf(SEqHatDot_1 * SEqHatDot_1 + SEqHatDot_2 * SEqHatDot_2 +
  8001602:	6b39      	ldr	r1, [r7, #48]	@ 0x30
  8001604:	6b38      	ldr	r0, [r7, #48]	@ 0x30
@@ -2148,7 +2127,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  8001682:	4603      	mov	r3, r0
  8001684:	627b      	str	r3, [r7, #36]	@ 0x24
 
-    // Compute quaternion derivative from gyro
     float SEqDot_omega_1 = -halfSEq_2 * gx - halfSEq_3 * gy - halfSEq_4 * gz;
  8001686:	6f3b      	ldr	r3, [r7, #112]	@ 0x70
  8001688:	f083 4300 	eor.w	r3, r3, #2147483648	@ 0x80000000
@@ -2248,7 +2226,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  8001768:	4603      	mov	r3, r0
  800176a:	617b      	str	r3, [r7, #20]
 
-    // Integrate estimated quaternion derivative
     SEq_1 += (SEqDot_omega_1 - (beta * SEqHatDot_1)) * deltat;
  800176c:	4966      	ldr	r1, [pc, #408]	@ (8001908 <Madgwick_Filter+0x5a8>)
  800176e:	6b38      	ldr	r0, [r7, #48]	@ 0x30
@@ -2342,7 +2319,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
  8001838:	4b38      	ldr	r3, [pc, #224]	@ (800191c <Madgwick_Filter+0x5bc>)
  800183a:	601a      	str	r2, [r3, #0]
 
-    // Normalise quaternion
     norm = sqrtf(SEq_1 * SEq_1 + SEq_2 * SEq_2 + SEq_3 * SEq_3 + SEq_4 * SEq_4);
  800183c:	4b34      	ldr	r3, [pc, #208]	@ (8001910 <Madgwick_Filter+0x5b0>)
  800183e:	681b      	ldr	r3, [r3, #0]
@@ -2448,7 +2424,6 @@ void Madgwick_Filter(float gx, float gy, float gz, float ax, float ay, float az)
 
 08001920 <Euler_Conversion>:
 
-// Convert quaternion to roll, pitch and yaw
 void Euler_Conversion(EulerAngles *angles) {
  8001920:	b5b0      	push	{r4, r5, r7, lr}
  8001922:	b084      	sub	sp, #16
@@ -2696,6 +2671,9 @@ void Euler_Conversion(EulerAngles *angles) {
  8001b48:	3fc90fdb 	.word	0x3fc90fdb
 
 08001b4c <Serial_Send_Data>:
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
 
 // Broadcast the data over USB to be viewed on PuTTY
 void Serial_Send_Data(EulerAngles *angles) {

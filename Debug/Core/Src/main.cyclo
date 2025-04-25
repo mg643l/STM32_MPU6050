@@ -1,11 +1,6 @@
-../Core/Src/main.c:35:6:MPU6050_Init	1
-../Core/Src/main.c:55:6:MPU6050_Read_Accel	1
-../Core/Src/main.c:73:6:MPU6050_Read_Gyro	1
-../Core/Src/main.c:91:6:Madgwick_Filter	1
-../Core/Src/main.c:152:6:Euler_Conversion	2
-../Core/Src/main.c:170:6:Serial_Send_Data	2
-../Core/Src/main.c:181:5:main	2
-../Core/Src/main.c:214:6:SystemClock_Config	4
-../Core/Src/main.c:251:13:MX_I2C1_Init	2
-../Core/Src/main.c:268:13:MX_GPIO_Init	1
-../Core/Src/main.c:275:6:Error_Handler	1
+../Core/Src/main.c:18:6:Serial_Send_Data	2
+../Core/Src/main.c:29:5:main	2
+../Core/Src/main.c:62:6:SystemClock_Config	4
+../Core/Src/main.c:99:13:MX_I2C1_Init	2
+../Core/Src/main.c:116:13:MX_GPIO_Init	1
+../Core/Src/main.c:123:6:Error_Handler	1
