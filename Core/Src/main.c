@@ -5,7 +5,11 @@
 #include <math.h>
 
 // Global variables for Madgwick filter
-extern float SEq_1, SEq_2, SEq_3, SEq_4;
+extern float SEq_1;
+extern float SEq_2;
+extern float SEq_3;
+extern float SEq_4;
+
 
 I2C_HandleTypeDef hi2c1;
 extern USBD_HandleTypeDef hUsbDeviceFS;
@@ -15,16 +19,17 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 
 // Broadcast the data over USB to be viewed on PuTTY
-void Serial_Send_Data(EulerAngles *angles) {
-    char buffer[64];
+void Serial_Send_Quaternion(float q0, float q1, float q2, float q3) {
+    char buffer[128];
     int length = snprintf(buffer, sizeof(buffer),
-        "Orientation: Roll=%.2f° Pitch=%.2f° Yaw=%.2f°\r\n",
-        angles->roll, angles->pitch, angles->yaw);
+        "Quaternion: q0=%.4f q1=%.4f q2=%.4f q3=%.4f\r\n",
+        q0, q1, q2, q3);
 
     while (CDC_Transmit_FS((uint8_t*)buffer, length) == USBD_BUSY) {
         HAL_Delay(1);
     }
 }
+
 
 int main(void) {
 	// MCU and sensor initialisation
@@ -37,6 +42,7 @@ int main(void) {
 
     float ax, ay, az;
     float gx, gy, gz;
+    float q0, q1, q2, q3;
     EulerAngles orientation;
 
     // Loop forever
@@ -49,9 +55,15 @@ int main(void) {
         Madgwick_Filter(gx, gy, gz, ax, ay, az);
         Euler_Conversion(&orientation);
 
-        // If USB is connected, send serial data
+        // Get the quaternion values
+        q0 = SEq_1;
+        q1 = SEq_2;
+        q2 = SEq_3;
+        q3 = SEq_4;
+
+        // If USB is connected, send quaternion data
         if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
-            Serial_Send_Data(&orientation);
+        	Serial_Send_Quaternion(q0, q1, q2, q3);
         }
 
         HAL_Delay(20);

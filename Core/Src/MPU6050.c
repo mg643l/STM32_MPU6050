@@ -13,7 +13,7 @@
 #define beta sqrtf(3.0f / 4.0f) * gyroMeasError
 
 // Quaternion state
-static float SEq_1 = 1.0f, SEq_2 = 0.0f, SEq_3 = 0.0f, SEq_4 = 0.0f;
+float SEq_1 = 1.0f, SEq_2 = 0.0f, SEq_3 = 0.0f, SEq_4 = 0.0f;
 
 void MPU6050_Init(void) {
     uint8_t value = 0x00;

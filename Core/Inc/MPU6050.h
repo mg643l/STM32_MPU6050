@@ -12,6 +12,11 @@ typedef struct {
     float yaw;
 } EulerAngles;
 
+extern float SEq_1;
+extern float SEq_2;
+extern float SEq_3;
+extern float SEq_4;
+
 extern I2C_HandleTypeDef hi2c1;
 
 void MPU6050_Init(void);
